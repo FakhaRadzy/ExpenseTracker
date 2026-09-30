@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 
 
-namespace ExpenseTracker.Infrastructure.Persistance
+namespace ExpenseTracker.Infrastructure.Persistence
 {
     public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {

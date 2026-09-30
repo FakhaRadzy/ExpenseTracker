@@ -1,12 +1,12 @@
-﻿using ExpenseTracker.Infrastructure.Persistance;
-using ExpenseTracker.Infrastructure.Persistance.Interceptors;
+﻿using ExpenseTracker.Infrastructure.Persistence;
+using ExpenseTracker.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ExpenseTracker.Infrastructure
 {
-    public static class DependecyInjection
+    public static class DependencyInjection
     {
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
