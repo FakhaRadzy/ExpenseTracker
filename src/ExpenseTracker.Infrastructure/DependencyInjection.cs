@@ -3,6 +3,7 @@ using ExpenseTracker.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ExpenseTracker.Application.Common.Interfaces;
 
 namespace ExpenseTracker.Infrastructure
 {
@@ -23,6 +24,9 @@ namespace ExpenseTracker.Infrastructure
 
                 options.AddInterceptors(serviceProvider.GetRequiredService<AuditableEntityInterceptor>());
             });
+
+            // When something asks for IApplicationDbContext, give it the same AppDbContext instance
+            services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
             return services;
         }
