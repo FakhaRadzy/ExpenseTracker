@@ -1,11 +1,12 @@
 ﻿using ExpenseTracker.Application.Common.Interfaces;
 using ExpenseTracker.Domain.Entities;
-using ExpenseTracker.Domain.Common;
 using Microsoft.EntityFrameworkCore;
+using ExpenseTracker.Application.Common.Exceptions;
+using FluentValidation;
 
 namespace ExpenseTracker.Application.Categories
 {
-    public class CategoryService(IApplicationDbContext db, ICurrentUserService currentUser) : ICategoryService
+    public class CategoryService(IApplicationDbContext db, ICurrentUserService currentUser, IValidator<CategoryRequest> validator) : ICategoryService
     {
         public async Task<IReadOnlyList<CategoryResponse>> GetAllAsync(CancellationToken ct)
         {
@@ -26,6 +27,8 @@ namespace ExpenseTracker.Application.Categories
 
         public async Task<CategoryResponse> CreateAsync(CategoryRequest request, CancellationToken ct)
         {
+            await validator.ValidateAndThrowAsync(request, ct);
+
             var category = new Category(currentUser.UserId, request.Name, request.Color);
             await EnsureNameIsUniqueAsync(category.Name, excludedId: null, ct);
 
@@ -37,6 +40,8 @@ namespace ExpenseTracker.Application.Categories
 
         public async Task<CategoryResponse?> UpdateAsync(Guid id, CategoryRequest request, CancellationToken ct)
         {
+            await validator.ValidateAndThrowAsync(request, ct);
+
             var category = await db.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == currentUser.UserId, ct);
             if (category is null) return null;
 
@@ -60,7 +65,7 @@ namespace ExpenseTracker.Application.Categories
 
             if (isInUse)
             {
-                throw new DomainException("This category is used by expense or budgets and cannot be deleted.");
+                throw new ConflictException("This category is used by expense or budgets and cannot be deleted.");
             }
 
             await db.Categories.Where(c => c.Id == id).ExecuteDeleteAsync(ct);
@@ -74,7 +79,7 @@ namespace ExpenseTracker.Application.Categories
 
             if (nameTaken)
             {
-                throw new DomainException($"A category named '{name}' already exists.");
+                throw new ConflictException($"A category named '{name}' already exists.");
             }
         }
     }

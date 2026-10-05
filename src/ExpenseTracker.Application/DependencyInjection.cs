@@ -1,5 +1,6 @@
 ﻿using ExpenseTracker.Application.Categories;
 using ExpenseTracker.Application.Expenses;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ExpenseTracker.Application
@@ -10,6 +11,9 @@ namespace ExpenseTracker.Application
         {
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IExpenseService, ExpenseService>();
+
+            // Finds every AbstractValidator<T> in this project and registers it as IValidator<T>
+            services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
             return services;
         }

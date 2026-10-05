@@ -3,10 +3,11 @@ using ExpenseTracker.Domain.Common;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
 
 namespace ExpenseTracker.Application.Expenses
 {
-    public class ExpenseService(IApplicationDbContext db, ICurrentUserService currentUser) : IExpenseService
+    public class ExpenseService(IApplicationDbContext db, ICurrentUserService currentUser, IValidator<ExpenseRequest> validator) : IExpenseService
     {
         // One mapping, reused by every query. EF turns it into SQL (including the JOIN for CategoryName).
         private static readonly Expression<Func<Expense, ExpenseResponse>> ToResponse = e => new ExpenseResponse(
@@ -34,6 +35,8 @@ namespace ExpenseTracker.Application.Expenses
 
         public async Task<ExpenseResponse> CreateAsync (ExpenseRequest request, CancellationToken ct)
         {
+            await validator.ValidateAndThrowAsync(request, ct);
+
             await EnsureCategoryExistsAsync(request.CategoryId, ct);
 
             var expense = new Expense(
@@ -53,6 +56,8 @@ namespace ExpenseTracker.Application.Expenses
 
         public async Task<ExpenseResponse?> UpdateAsync(Guid id, ExpenseRequest request, CancellationToken ct)
         {
+            await validator.ValidateAndThrowAsync(request, ct);
+
             var expense = await UserExpenses().FirstOrDefaultAsync(e => e.Id == id, ct);
 
             if (expense is null) return null;
