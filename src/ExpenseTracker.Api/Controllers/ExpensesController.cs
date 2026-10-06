@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ExpenseTracker.Api.Controllers
 {
     [ApiController]
+    [Authorize]             // Every endpoint in this controller now needs a valid token
     [Route("api/[controller]")]
     public class ExpensesController(IExpenseService expenseService) : ControllerBase
     {

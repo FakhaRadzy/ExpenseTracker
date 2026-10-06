@@ -1,4 +1,5 @@
 ﻿using ExpenseTracker.Domain.Entities;
+using ExpenseTracker.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,6 +12,9 @@ namespace ExpenseTracker.Infrastructure.Persistence.Configurations
             builder.ToTable("Expenses", t => t.HasCheckConstraint("CK_Expenses_Amount_Positive", "[Amount] > 0"));
 
             builder.HasKey(e => e.Id);
+
+            builder.HasOne<AppUser>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+
             builder.Property(e => e.Id).ValueGeneratedNever();
 
             builder.Property(e => e.Amount).HasPrecision(18, 2);

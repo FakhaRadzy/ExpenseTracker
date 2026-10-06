@@ -5,6 +5,7 @@ using ExpenseTracker.Application.Common.Interfaces;
 using Scalar.AspNetCore;
 using ExpenseTracker.Api.Services;
 using ExpenseTracker.Api.ErrorHandler;
+using ExpenseTracker.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +19,12 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<ICurrentUserService, DevCurrentUserService>();               // TEMPORARY until Phase 5
 
-builder.Services.AddOpenApi();
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();              
+
+builder.Services.AddOpenApiWithBearerAuth();
 
 var app = builder.Build();
 
@@ -32,12 +36,14 @@ app.UseStatusCodePages();   // Empty 404/405 response become ProblemDetails too
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();                // Interactive API docs at Scalar
+    app.MapScalarApiReference(options => options.AddPreferredSecuritySchemes("Bearer"));                // Interactive API docs at Scalar
 }
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseAuthentication();                        // "Who are you?" (reads the token). Must come BEFORE
+
+app.UseAuthorization();                         // "Are you allowed?" (check [Authorize])
 
 app.MapControllers();
 

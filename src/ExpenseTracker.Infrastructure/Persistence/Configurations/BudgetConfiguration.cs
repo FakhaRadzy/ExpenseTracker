@@ -1,6 +1,7 @@
 ﻿using ExpenseTracker.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ExpenseTracker.Infrastructure.Identity;
 
 namespace ExpenseTracker.Infrastructure.Persistence.Configurations
 {
@@ -15,6 +16,9 @@ namespace ExpenseTracker.Infrastructure.Persistence.Configurations
             );
 
             builders.HasKey(b => b.Id);
+
+            builders.HasOne<AppUser>().WithMany().HasForeignKey(b => b.UserId).OnDelete(DeleteBehavior.Cascade);
+
             builders.Property(b => b.Id).ValueGeneratedNever();
 
             builders.Property(b => b.Limit).HasPrecision(18, 2);

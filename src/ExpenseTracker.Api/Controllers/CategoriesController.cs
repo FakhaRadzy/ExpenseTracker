@@ -1,9 +1,11 @@
 ﻿using ExpenseTracker.Application.Categories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ExpenseTracker.Api.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/[controller]")]
     public class CategoriesController(ICategoryService categoryService) : ControllerBase
     {

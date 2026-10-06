@@ -32,6 +32,13 @@ namespace ExpenseTracker.Api.ErrorHandler
                     Detail = exception.Message
                 },
 
+                UnauthorizedException => new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Authentication failed.",
+                    Detail = exception.Message
+                },
+
                 // Anything else is a bug. Never send exception.Message to the client: it can leak internals.
                 _ => new ProblemDetails
                 {

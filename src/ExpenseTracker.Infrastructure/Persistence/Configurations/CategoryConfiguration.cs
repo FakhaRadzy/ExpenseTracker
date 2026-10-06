@@ -1,6 +1,7 @@
 ﻿using ExpenseTracker.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ExpenseTracker.Infrastructure.Identity;
 
 namespace ExpenseTracker.Infrastructure.Persistence.Configurations
 {
@@ -11,6 +12,9 @@ namespace ExpenseTracker.Infrastructure.Persistence.Configurations
             builder.ToTable("Categories");
 
             builder.HasKey(c => c.Id);
+
+            builder.HasOne<AppUser>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
+
             builder.Property(c => c.Id).ValueGeneratedNever();
 
             builder.Property(c => c.Name).HasMaxLength(Category.NameMaxLength).IsRequired();
