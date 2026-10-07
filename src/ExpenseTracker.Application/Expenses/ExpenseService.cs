@@ -4,10 +4,12 @@ using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
+using ExpenseTracker.Application.Common.Models;
+using ExpenseTracker.Application.Common.Extensions;
 
 namespace ExpenseTracker.Application.Expenses
 {
-    public class ExpenseService(IApplicationDbContext db, ICurrentUserService currentUser, IValidator<ExpenseRequest> validator) : IExpenseService
+    public class ExpenseService(IApplicationDbContext db, ICurrentUserService currentUser, IValidator<ExpenseRequest> validator, IValidator<ExpenseQuery> queryValidator) : IExpenseService
     {
         // One mapping, reused by every query. EF turns it into SQL (including the JOIN for CategoryName).
         private static readonly Expression<Func<Expense, ExpenseResponse>> ToResponse = e => new ExpenseResponse(
@@ -23,14 +25,66 @@ namespace ExpenseTracker.Application.Expenses
             e.UpdatedAtUtc
             );
 
-        public async Task<IReadOnlyList<ExpenseResponse>> GetAllAsync(CancellationToken ct)
+        public async Task<PagedResult<ExpenseResponse>> GetAllAsync(ExpenseQuery query, CancellationToken ct)
         {
-            return await UserExpenses().OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedAtUtc).Select(ToResponse).ToListAsync(ct);
+            await queryValidator.ValidateAndThrowAsync(query, ct);
+
+            var expenses = UserExpenses();
+
+            // ── Filters: each one is only added if the client asked for it ──
+            if (query.From is not null)
+            {
+                expenses = expenses.Where(e => e.Date >= query.From.Value);
+            }
+
+            if (query.To is not null)
+            {
+                expenses = expenses.Where(e => e.Date <= query.To.Value);
+            }
+
+            if (query.CategoryId is not null)
+            {
+                expenses = expenses.Where(e => e.CategoryId == query.CategoryId.Value);
+            }
+
+            if (query.PaymentMethod is not null)
+            {
+                expenses = expenses.Where(e => e.PaymentMethod == query.PaymentMethod.Value);
+            }
+
+            if (query.MinAmount is not null)
+            {
+                expenses = expenses.Where(e => e.Amount >= query.MinAmount.Value);
+            }
+
+            if (query.MaxAmount is not null)
+            {
+                expenses = expenses.Where(e => e.Amount <= query.MaxAmount.Value);
+            }
+
+            if (!string.IsNullOrEmpty(query.Search))
+            {
+                var search = query.Search.Trim(); 
+                expenses = expenses.Where(e => e.Description.Contains(search) || (e.Notes != null && e.Notes.Contains(search)));
+            }
+
+            // ── Sorting: always end with a unique tie-breaker so paging is stable
+            expenses = (query.SortBy, query.SortDirection) switch
+            {
+                (ExpenseSortField.Amount, SortDirection.Asc) => expenses.OrderBy(e => e.Amount).ThenBy(e => e.Id),
+                (ExpenseSortField.Amount, SortDirection.Desc) => expenses.OrderByDescending(e => e.Amount).ThenBy(e => e.Id),
+                (ExpenseSortField.Date, SortDirection.Asc) => expenses.OrderBy(e => e.Date).ThenBy(e => e.Id),
+                _ => expenses.OrderByDescending(e => e.Date).ThenBy(e => e.Id)
+            };
+
+            // ── Project to DTOs, then fetch just the requested page ──
+            return await expenses.Select(ToResponse).ToPagedResultAsync(query.Page, query.PageSize, ct);
+
         }
 
         public async Task<ExpenseResponse?> GetIdAsync (Guid id, CancellationToken ct)
         {
-            return await UserExpenses().Where(e => e.Id == id).Select(ToResponse).FirstOrDefaultAsync();
+            return await UserExpenses().Where(e => e.Id == id).Select(ToResponse).FirstOrDefaultAsync(ct);
         }
 
         public async Task<ExpenseResponse> CreateAsync (ExpenseRequest request, CancellationToken ct)

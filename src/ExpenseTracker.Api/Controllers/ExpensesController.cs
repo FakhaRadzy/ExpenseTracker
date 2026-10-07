@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Authorization;
+using ExpenseTracker.Application.Common.Models;
 
 namespace ExpenseTracker.Api.Controllers
 {
@@ -12,9 +13,9 @@ namespace ExpenseTracker.Api.Controllers
     public class ExpensesController(IExpenseService expenseService) : ControllerBase
     {
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ExpenseResponse>>> GetAll(CancellationToken ct)
+        public async Task<ActionResult<PagedResult<ExpenseResponse>>> GetAll([FromQuery]ExpenseQuery query, CancellationToken ct)
         {
-            return Ok(await expenseService.GetAllAsync(ct));
+            return Ok(await expenseService.GetAllAsync(query, ct));
         }
 
         [HttpGet("{id:guid}")]
